@@ -1,0 +1,106 @@
+{
+    SoftwareKeyboard.kn (for Kuin 0.023):
+        Last Modified: 2013/03/31 21:19:23.
+        Created by @tatt61880
+            https://twitter.com/tatt61880
+            https://github.com/tatt61880
+}
+
+import Draw
+
+const key_width:float :: Draw@fw * 0.7
+const key_height:float :: Draw@fh * SoftwareKeyboard@key_width / Draw@fw
+const board_width:float :: SoftwareKeyboard@key_width * Draw@char_x_max$float
+const board_height:float :: SoftwareKeyboard@key_height * Draw@char_y_max$float
+class SoftwareKeyboard()
+    var keys:[]Key
+    class Key()
+        var c:char
+        var x:float
+        var y:float
+        var t:float
+        var velx:float
+        var vely:float
+        var velt:float
+        func Init(c_:char, x_:float, y_:float) :Key
+            do this.c :: c_
+            do this.x :: x_
+            do this.y :: y_
+            return this
+        end func
+        func SetVel(velx_:float, vely_:float, velt_:float)
+            do this.velx :: velx_
+            do this.vely :: vely_
+            do this.velt :: velt_
+        end func
+        func Show()
+            do Draw@DrawCharRot(this.c, this.x, this.y, this.t, SoftwareKeyboard@key_width, 0.5,1.0,1.0,1.0)
+        end func
+    end class
+    func Init() :SoftwareKeyboard
+        do this.keys :: @new [Draw@char_num]Key
+        for i(0, Draw@char_num-1)
+            do this.keys[i] :: (@new Key).Init((i+32)$char, 300.0+(i % Draw@char_x_max)$float*SoftwareKeyboard@key_width, 200.0+(i/Draw@char_x_max)$float*SoftwareKeyboard@key_height)
+        end for
+        return this
+    end func
+    func SetVels()
+        const max_speed:int :: 5
+        foreach key(this.keys)
+            while a(true)
+                do key.SetVel(Kuin@Rand(-max_speed, max_speed)$float, Kuin@Rand(-max_speed, max_speed)$float, Kuin@Rand(-max_speed, max_speed)$float/360.0)
+                if (key.velx <> 0.0 & key.vely <> 0.0 & key.velt <> 0.0)
+                    break a
+                end if
+            end while
+        end foreach
+    end func
+    func KeyboardAct(c:&char)
+        do this.ShowKeyboard()
+        do this.KeyMove()
+        do this.KeyInput(&c)
+    end func
+    -func ShowKeyboard()
+        foreach key(this.keys)
+            do key.Show()
+        end foreach
+    end func
+    -func KeyMove()
+        foreach key(this.keys)
+            do key.x :+ key.velx
+            do key.y :+ key.vely
+            do key.t :+ key.velt
+            if (key.x < 0.0 | key.x > (1600.0 - SoftwareKeyboard@key_width))
+                do key.x :- key.velx
+                do key.velx :: -key.velx
+            end if
+            if (key.y < 80.0 | key.y > (900.0 - SoftwareKeyboard@key_height))
+                do key.y :- key.vely
+                do key.vely :: - key.vely
+            end if
+        end foreach
+    end func
+    -func KeyInput(c:&char)
+        if (c <> 0$char)
+            var id:int :: c$int - 32
+            do HighlightPreInputChar(this.keys[id].x, this.keys[id].y, this.keys[id].t)
+        else
+            var x:float
+            var y:float
+            do DI@MousePos(&x, &y)
+            foreach key(this.keys)
+                if (x > key.x & x < (key.x + SoftwareKeyboard@key_width) & y > key.y & y < (key.y + SoftwareKeyboard@key_height))
+                    do HighlightPreInputChar(key.x, key.y, key.t)
+                    if (DI@MouseBtn(DI@EMouseBtn#Left) = 1)
+                        do c :: key.c
+                    end if
+                    break key
+                end if
+            end foreach
+        end if
+        func HighlightPreInputChar(x:float, y:float, t:float)
+            do Draw@DrawRectRot(x, y, SoftwareKeyboard@key_width, SoftwareKeyboard@key_height, SoftwareKeyboard@key_width/2.0, SoftwareKeyboard@key_height/2.0, t, 1.0,1.0,0.0,0.5)
+        end func
+    end func
+end class
+

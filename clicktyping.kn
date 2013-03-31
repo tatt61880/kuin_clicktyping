@@ -1,0 +1,369 @@
+{
+    clicktyping.kn (for Kuin 0.023):
+        Last Modified: 2013/03/31 21:13:15.
+        Created by @tatt61880
+            https://twitter.com/tatt61880
+            https://github.com/tatt61880
+}
+
+import Draw
+import SoftwareKeyboard
+
+const FPS:int :: 30
+const str_len_max:int :: 40
+const inputspan:int :: clicktyping@FPS / 5
+const savefile:[]char :: "clicktyping.knd"
+const hello:[]char :: "Hello"
+const world:[]char :: "World!!"
+{
+const hello:[]char :: "H"
+const world:[]char :: "W"
+}
+
+func Init(cfg:Kuin@CCfg)
+    do cfg.Title :: "ClickTyping \"Hello World!!\""
+    do cfg.FullScr :: false
+    do cfg.PadNum :: 1
+    do cfg.WaitTime :: clicktyping@FPS
+end func
+
+func Release()
+end func
+
+var insert_mode:bool
+var input_flag:bool
+var col_end:int
+
+func UnShiftStr(col:&int, str:[]char)
+    if (!clicktyping@insert_mode)
+        if (col > clicktyping@col_end)
+            var temp:int :: col
+            do col :: clicktyping@col_end
+            do clicktyping@col_end :: temp
+        end if
+        for (1, clicktyping@col_end - col)
+            do clicktyping@Del(col, str)
+        end for
+        do clicktyping@insert_mode :: true
+    end if
+
+    for i(str.Len()-1, col+1, -1)
+        do str[i] :: str[i-1]
+    end for
+    if (col < clicktyping@str_len_max)
+        do str[col] :: ' '
+    end if
+end func
+func Del(col:int, str:[]char)
+    if (col < clicktyping@str_len_max)
+        for i(col, str.Len()-2)
+            do str[i] :: str[i+1]
+        end for
+        do str[str.Len()-1] :: 0$char
+    end if
+end func
+func BackSpace(col:&int, str:[]char)
+    if (col > 0)
+        do col :- 1
+        do clicktyping@Del(col, str)
+    end if
+end func
+func DeleteSelectedChars(col:&int, str:[]char)
+    if (col > clicktyping@col_end)
+        var temp:int :: col
+        do col :: clicktyping@col_end
+        do clicktyping@col_end :: temp
+    end if
+    for i(1, clicktyping@col_end - col)
+        do clicktyping@Del(col, str)
+    end for
+end func
+func FillSpace(col:int, str:[]char)
+    while a(true)
+        if (col = 0)
+            break a
+        elif (str[col-1] = 0$char)
+            do str[col-1] :: ' '
+        else
+            break a
+        end if
+        do col :- 1
+    end while
+end func
+func TextLen(str:[]char) :int
+    for i(0, str.Len()-1)
+        if (str[i] = 0$char)
+            return i
+        end if
+    end for
+    return clicktyping@str_len_max
+end func
+func InsertChar(col:&int, str:[]char, c:&char)
+    if (c = #7F$char)
+        do clicktyping@Del(col, str) {Delete}
+    else
+        if (col < clicktyping@str_len_max)
+            do str[col] :: c
+            do clicktyping@FillSpace(col, str)
+            do col :+ 1
+        end if
+    end if
+    do c :: 0$char
+    do Kuin@Dbg(str)
+end func
+
+func Main()
+    do Draw@rect :: D3D@LoadTex("rect.png")
+    do Draw@font :: D3D@LoadTex("aini_font_160_80.png")
+    while (true)
+        do clicktyping@Title()
+        do clicktyping@Game()
+    end while
+end func
+
+func Title()
+    var return_flag:bool :: false
+    const click_button_fw:float :: 100.0
+    const click_button_left:float :: 100.0
+    const click_button_top:float :: 400.0
+    const click_button_bottom:float :: click_button_top + click_button_fw * 2.0
+    const click_button_text:[]char :: "Click to Start"
+    var click_button_right:float :: click_button_left + click_button_text.Len()$float * click_button_fw
+    var mouse_x:float
+    var mouse_y:float
+    while(true)
+        do Kuin@Act()
+        do D3D@DrawRect(0.0, 0.0, 1600.0, 900.0, 0.45,0.55,1.0,1.0) {Background}
+        do Draw@DrawStr("ClickTyping", 50.0, 100.0, 40.0, 1.0, 1.0, 1.0, 1.0)
+        do Draw@DrawStr("\"Hello World!!\"", 540.0, 100.0, 60.0, 1.0, 0.0, 1.0, 1.0)
+        do D3D@DrawRect(click_button_left, click_button_top, click_button_right, 600.0, 1.0,1.0,0.0,0.5)
+        do Draw@DrawStr(click_button_text, click_button_left, click_button_top, click_button_fw, 0.0, 1.0, 1.0, 1.0)
+
+        if(DI@PadBtn(0, DI@EPadBtn#A) <> 0)
+            do return_flag :: true
+        elif (return_flag)
+            return
+        end if
+        if(DI@MouseBtn(DI@EMouseBtn#Left) = 1)
+            do DI@MousePos(&mouse_x, &mouse_y)
+            if (mouse_x > click_button_left & mouse_x < click_button_right & mouse_y > click_button_top & mouse_y < click_button_bottom)
+                return
+            end if
+        end if
+    end while
+end func
+
+func Game()
+    var str:[]char :: @new [clicktyping@str_len_max]char
+    var c:char
+    var keyboard:SoftwareKeyboard@SoftwareKeyboard :: (@new SoftwareKeyboard@SoftwareKeyboard).Init()
+    var ending:Draw@EndingAnimation :: (@new Draw@EndingAnimation).Init()
+    var col:int :: 0
+    var hello_flag:bool :: true
+    var world_flag:bool :: true
+    do clicktyping@input_flag :: true
+    do clicktyping@insert_mode :: true
+    var hiscore_frame:int :: 0
+    var savedata_str:[]char :: SaveData@Load(clicktyping@savefile)
+    if (savedata_str <> null)
+        do hiscore_frame :: savedata_str$int
+    end if
+    var hiscore_time_str:[]char :: Frame2TimeStr(hiscore_frame)
+    var current_frame:int :: 0
+    var current_time_str:[]char
+    var new_record:bool
+    var mouse_x:float
+    var mouse_y:float
+    func Frame2TimeStr(frame:int) :[]char
+        if (frame = 0)
+            return "--------"
+        else
+            return (frame/clicktyping@FPS).ToStr() ~ "." ~ ((frame%clicktyping@FPS)*100/clicktyping@FPS).ToStrF("02d") ~ " sec."
+        end if
+    end func
+    while mainloop(true)
+        do Kuin@Act()
+        do D3D@DrawRect(0.0, 0.0, 1600.0, 900.0, 0.45,0.55,1.0,1.0) {Background}
+        do D3D@DrawRect(0.0, 0.0, 1600.0, Draw@dfh, 0.4,0.4,0.4,1.0) {EditLine}
+        do D3D@DrawRect(clicktyping@TextLen(str)$float*Draw@dfw, 0.0, 1600.0, Draw@dfh, 0.2,0.2,0.2,1.0) {EditLine}
+        do Draw@DrawStr("HI SCORE:", 1200.0, 100.0, 30.0, 1.0, 0.0, 1.0, 1.0)
+        do Draw@DrawStr(hiscore_time_str, 1600.0-30.0*hiscore_time_str.Len()$float, 160.0, 30.0, 1.0, 0.0, 1.0, 1.0)
+        do Draw@DrawStr("Time:", 1200.0, 300.0, 30.0, 1.0, 1.0, 1.0, 1.0)
+        do current_time_str :: Frame2TimeStr(current_frame)
+        do Draw@DrawStr(current_time_str, 1600.0-30.0*current_time_str.Len()$float, 360.0, 30.0, 1.0, 1.0, 1.0, 1.0)
+        if(DI@PadBtn(0, DI@EPadBtn#C) <> 0)
+            return
+        end if
+        {
+        if(DI@PadBtn(0, DI@EPadBtn#D) <> 0)
+            do SaveData@Save(clicktyping@savefile, "0") {Hi-score clear}
+        end if
+        }
+        if (hello_flag)
+            if (StrCmp(str, clicktyping@hello))
+                do hello_flag :: false
+                do str :: @new [clicktyping@str_len_max]char
+                do keyboard.SetVels()
+                do col :: 0
+            end if
+        elif (world_flag)
+            if (StrCmp(str, clicktyping@world))
+                do str :: @new [clicktyping@str_len_max]char
+                do world_flag :: false
+            end if
+        else
+            do hiscore_frame :: new_record ?(current_frame, hiscore_frame)
+            do hiscore_time_str :: Frame2TimeStr(hiscore_frame)
+            do SaveData@Save(clicktyping@savefile, hiscore_frame.ToStr())
+            if (ending.Animation())
+                if(DI@PadBtn(0, DI@EPadBtn#A) = 1 | DI@MouseBtn(DI@EMouseBtn#Left) = 1)
+                    return
+                end if
+            end if
+            continue mainloop
+        end if
+        do current_frame :+ 1
+        do new_record :: (hiscore_frame = 0 | current_frame < hiscore_frame) ?(true, false)
+
+        do DI@MousePos(&mouse_x, &mouse_y)
+        if (hello_flag)
+            do Draw@DrawStr(clicktyping@hello, 0.0, 0.0, Draw@dfw, 1.0, 1.0, 1.0, 0.1)
+        else
+            do Draw@DrawStr(clicktyping@world, 0.0, 0.0, Draw@dfw, 1.0, 1.0, 1.0, 0.1)
+        end if
+        do keyboard.KeyboardAct(&c)
+        do Edit(&col, str, &c)
+        do DrawText(str)
+        do DrawCursor(col)
+        func StrCmp(str1:[]char, str2:[]char) :bool
+            for i(0, str2.Len()-1)
+                if (str1[i] <> str2[i])
+                    return false
+                end if
+            end for
+            return true
+        end func
+    end while
+
+    func Edit(col:&int, str:[]char, c:&char)
+        { Space key }
+        var n:int :: DI@PadBtn(0, DI@EPadBtn#A)
+        if (n > 0)
+            const frame_per_char:int :: 3
+            do c :: (32+((n-1)/frame_per_char) % Draw@char_num)$char
+            if (n = 1)
+                do clicktyping@input_flag :: true
+                do clicktyping@UnShiftStr(&col, str)
+            else
+                do Draw@DrawChar(c, Draw@dfw*col$float, Draw@dfh*0.0, Draw@dfw, 1.0,1.0,1.0,1.0)
+                if (col < clicktyping@str_len_max)
+                    do str[col] :: ' '
+                end if
+            end if
+        elif (c <> 0$char)
+            do clicktyping@UnShiftStr(&col, str)
+            if (clicktyping@input_flag)
+                do clicktyping@input_flag :: false
+                do clicktyping@Del(col, str) {Cancel inserting ' '}
+            end if
+            do clicktyping@InsertChar(&col, str, &c)
+            do clicktyping@insert_mode :: true
+        end if
+
+        { Arrow keys }
+        if (DI@PadBtn(0, DI@EPadBtn#Left) % clicktyping@inputspan = 1) {Left}
+            if (col <> 0)
+                if (n > 0)
+                    var tmp:char :: str[col]
+                    do str[col] :: str[col-1]
+                    do str[col-1] :: tmp
+                end if
+                do col :- 1
+            end if
+            do clicktyping@insert_mode :: true
+        elif (DI@PadBtn(0, DI@EPadBtn#Right) % clicktyping@inputspan = 1) {Right}
+            if (col <> clicktyping@str_len_max-1)
+                if (n > 0)
+                    var tmp:char :: str[col]
+                    do str[col] :: str[col+1]
+                    do str[col+1] :: tmp
+                end if
+                do col :+ 1
+            end if
+            do clicktyping@insert_mode :: true
+        {
+        elif (DI@PadBtn(0, DI@EPadBtn#Up) % clicktyping@inputspan = 1) {[Up]-key is for [Delete]-key}
+            if (clicktyping@insert_mode)
+                do clicktyping@Del(col, str)
+            else
+                do clicktyping@DeleteSelectedChars(&col, str)
+            end if
+            do Kuin@Dbg(str)
+            do clicktyping@insert_mode :: true
+        }
+        elif ({DI@PadBtn(0, DI@EPadBtn#Down) % clicktyping@inputspan = 1 |} DI@PadBtn(0, DI@EPadBtn#B) % clicktyping@inputspan = 1) {BackSpace}
+            if (clicktyping@insert_mode)
+                do clicktyping@BackSpace(&col, str)
+            else
+                do clicktyping@DeleteSelectedChars(&col, str)
+            end if
+            do Kuin@Dbg(str)
+            do clicktyping@insert_mode :: true
+        end if
+
+        { Click (clicktyping area) }
+        var mouse_x:float
+        var mouse_y:float
+        do DI@MousePos(&mouse_x, &mouse_y)
+        if (mouse_y > 0.0 & mouse_y < Draw@dfh)
+            var m:int :: DI@MouseBtn(DI@EMouseBtn#Left)
+            if (m = 1)
+                do clicktyping@insert_mode :: true
+                do col :: (mouse_x/Draw@dfw + 0.4)$int
+                if (col > clicktyping@str_len_max-1)
+                    do col :: clicktyping@str_len_max
+                end if
+            elif (m <> 0)
+                do clicktyping@col_end :: (mouse_x/Draw@dfw + 0.4)$int
+                var text_len:int :: clicktyping@TextLen(str)
+                if (col < text_len)
+                    if (clicktyping@col_end < text_len)
+                    else
+                        do clicktyping@col_end :: text_len
+                    end if
+                    if (col <> clicktyping@col_end)
+                        do clicktyping@insert_mode :: false
+                    end if
+                else
+                    if (clicktyping@col_end < text_len)
+                        do col :: text_len
+                        do clicktyping@insert_mode :: false
+                    else
+                        do col :: clicktyping@col_end
+                    end if
+                end if
+            end if
+        end if
+    end func
+    func DrawText(str:[]char)
+        var i:int :: 0
+        foreach c(str)
+            var n:int :: c$int - 32
+            if (c = 0$char)
+                break c
+            end if
+            do Draw@DrawChar(c, Draw@dfw*i$float, Draw@dfh*0.0, Draw@dfw, 1.0,1.0,1.0,1.0)
+            do i :+ 1
+        end foreach
+    end func
+    func DrawCursor(col:int)
+        if (clicktyping@insert_mode)
+            if ((Kuin@Cnt() * 3/ clicktyping@FPS)% 2 = 0)
+                do D3D@DrawRect(Draw@dfw*col$float, 0.0, Draw@dfw*col$float + 5.0, Draw@dfh$float, 0.0,1.0,0.0,1.0)
+            end if
+        else
+            do D3D@DrawRect(Draw@dfw*col$float, 0.0, Draw@dfw*clicktyping@col_end$float, Draw@dfh$float, 0.0,1.0,0.0,0.5)
+        end if
+    end func
+end func
+
