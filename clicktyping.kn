@@ -1,6 +1,6 @@
 {
     clicktyping.kn (for Kuin 0.023):
-        Last Modified: 2013/03/31 21:13:15.
+        Last Modified: 2013/04/07 09:16:22.
         Created by @tatt61880
             https://twitter.com/tatt61880
             https://github.com/tatt61880
@@ -311,7 +311,7 @@ func Game()
             do clicktyping@insert_mode :: true
         end if
 
-        { Click (clicktyping area) }
+        { Click (Editor area) }
         var mouse_x:float
         var mouse_y:float
         do DI@MousePos(&mouse_x, &mouse_y)
