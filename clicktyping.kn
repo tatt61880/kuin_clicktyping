@@ -1,6 +1,6 @@
 {
     clicktyping.kn (for Kuin 0.023):
-        Last Modified: 2013/04/07 09:16:22.
+        Last Modified: 2013/04/13 22:17:58.
         Created by @tatt61880
             https://twitter.com/tatt61880
             https://github.com/tatt61880
@@ -37,9 +37,7 @@ var col_end:int
 func UnShiftStr(col:&int, str:[]char)
     if (!clicktyping@insert_mode)
         if (col > clicktyping@col_end)
-            var temp:int :: col
-            do col :: clicktyping@col_end
-            do clicktyping@col_end :: temp
+            do col @swap clicktyping@col_end
         end if
         for (1, clicktyping@col_end - col)
             do clicktyping@Del(col, str)
@@ -70,9 +68,7 @@ func BackSpace(col:&int, str:[]char)
 end func
 func DeleteSelectedChars(col:&int, str:[]char)
     if (col > clicktyping@col_end)
-        var temp:int :: col
-        do col :: clicktyping@col_end
-        do clicktyping@col_end :: temp
+        do col @swap clicktyping@col_end
     end if
     for i(1, clicktyping@col_end - col)
         do clicktyping@Del(col, str)
@@ -274,9 +270,7 @@ func Game()
         if (DI@PadBtn(0, DI@EPadBtn#Left) % clicktyping@inputspan = 1) {Left}
             if (col <> 0)
                 if (n > 0)
-                    var tmp:char :: str[col]
-                    do str[col] :: str[col-1]
-                    do str[col-1] :: tmp
+                    do str[col] @swap str[col-1]
                 end if
                 do col :- 1
             end if
@@ -284,9 +278,7 @@ func Game()
         elif (DI@PadBtn(0, DI@EPadBtn#Right) % clicktyping@inputspan = 1) {Right}
             if (col <> clicktyping@str_len_max-1)
                 if (n > 0)
-                    var tmp:char :: str[col]
-                    do str[col] :: str[col+1]
-                    do str[col+1] :: tmp
+                    do str[col] @swap str[col+1]
                 end if
                 do col :+ 1
             end if
