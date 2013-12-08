@@ -1,0 +1,172 @@
+{
+	Draw.kn (for Kuin 1.00):
+		Last Modified: 2013/12/08 09:20:41.
+		Created by @tatt61880
+			https://twitter.com/tatt61880
+			https://github.com/tatt61880
+}
+
+const CharNum: int :: 96
+const CharXMax: int :: 16
+const CharYMax: int :: 6
+const Fw: float :: 80.0
+const Fh: float :: 160.0
+const Dfw: float :: 40.0
+const Dfh: float :: 80.0
+
+var Font: Draw@CTex
+func DrawChar(c: char, x: float, y: float, w: float, r: float, g: float, b: float, a: float)
+	do @Font.DrawScale(@Fw * (c $ int % @CharXMax) $ float, @Fh * (c $ int / @CharXMax - 2) $ float, @Fw, @Fh, x, y, w, 2.0 * w, r, g, b, a)
+end func
+func DrawCharRot(c: char, x: float, y: float, t: float, w: float, r: float, g: float, b: float, a: float)
+	do @Font.DrawRot(@Fw * (c $ int % @CharXMax) $ float, @Fh * (c $ int / @CharXMax - 2) $ float, @Fw, @Fh, x, y, w, 2.0 * w, w / 2.0, w, t, r, g, b, a)
+end func
+func DrawStr(str: []char, x: float, y: float, w: float, r: float, g: float, b: float, a: float)
+	var i: int :: 0
+	foreach c(str)
+		do @DrawChar(c, x + i $ float * w, y, w, r, g, b, a)
+		do i :+ 1
+	end foreach
+end func
+
+var Rect:Draw@CTex
+func DrawRectRot(dx: float, dy: float, w: float, h: float, cx: float, cy: float, angle: float, r: float, g: float, b: float, a: float)
+	do @Rect.DrawRot(0.0, 0.0, 1.0, 1.0, dx, dy, w, h, cx, cy, angle, r, g, b, a)
+end func
+
+func Initialize()
+	do @Rect :: Draw@LoadTex("rect.kntex")
+	do @Font :: Draw@LoadTex("aini_font_160_80.kntex")
+end func
+
+class EndingAnimation()
+	var message: []char
+	var code: []char
+	var kuin: []char
+	var fontcreator: []char
+	var other: []char
+	var codeColor: []char
+	var codeChars: []CChar
+	var count: int
+
+	func Init() :@EndingAnimation
+		do this.count :: 0
+		do this.message :: "Thank you for playing!"
+		do this.kuin :: "Programming lauguage: Kuin (Kuina: @b2)"
+		do this.fontcreator :: "Font: AiNIFont (AiNI: @aini_bellwood)"
+		do this.other :: "The others: tatt61880 (Tatt: @tatt61880)"
+		do this.code :: "" {
+		} ~ "func Main()\n" {
+		} ~ "    while()\n" {
+		} ~ "        do Kuin@Act()\n" {
+		} ~ "        {TODO}\n" {
+		} ~ "    end while\n" {
+		} ~ "end func " {
+		}
+		const color: []char :: "" {
+		} ~ "kkkk 0000()\n" {
+		} ~ "    kkkkk()\n" {
+		} ~ "        kk 0000@000()\n" {
+		} ~ "        cccccc\n" {
+		} ~ "    kkk kkkkk\n" {
+		} ~ "kkk kkkk " {
+		}
+
+		do this.codeChars :: #[this.code.Len()]CChar
+		var col: int :: -1
+		var row: int :: 0
+		for i(0, this.codeChars.Len() - 1)
+			do col :+ 1
+			var c: char :: this.code[i]
+			if(c = '\n')
+				do c :: ' '
+				do col :: -1
+				do row :+ 1
+			end if
+			do this.codeChars[i] :: (#CChar).Init(c, col $ float * @Dfw, 100.0 + row $ float * @Dfh, color[i])
+		end for
+		return this
+	end func
+
+	func Animation() : bool
+		const typespeedFpc: int :: 4 {frame / char}
+		var ret: bool :: false
+		var n: int :: this.count / typespeedFpc
+
+		if(n > this.code.Len() - 2)
+			do ret :: true
+			do @DrawStr(this.message, 0.0, 0.0, @Dfw, 1.0, 1.0, 0.0, 1.0)
+			const bottom: float :: 900.0
+			const creditFontWidth: float :: 30.0
+			do @DrawStr(this.kuin, 0.0, bottom - 6.0 * creditFontWidth, creditFontWidth, 1.0, 1.0, 1.0, 1.0)
+			do @DrawStr(this.fontcreator, 0.0, bottom - 4.0 * creditFontWidth, creditFontWidth, 1.0, 1.0, 1.0, 1.0)
+			do @DrawStr(this.other, 0.0, bottom - 2.0 * creditFontWidth, creditFontWidth, 1.0, 1.0, 1.0, 1.0)
+			do n :: this.code.Len() - 2
+		end if
+		if(this.codeChars[n].color <> this.codeChars[n + 1].color)
+			foreach c(this.codeChars)
+				if(c.typeFlag = false)
+					break c
+				end if
+				do c.colorFlag :: true
+			end foreach
+		end if
+		do this.codeChars[n].typeFlag :: true
+
+		foreach c(this.codeChars)
+			if(c.typeFlag = false)
+				break c
+			end if
+			if(c.colorFlag)
+				do @DrawChar(c.c, c.x, c.y, @Dfw, c.r, c.g, c.b, 1.0)
+			else
+				do @DrawChar(c.c, c.x, c.y, @Dfw, 1.0, 1.0, 1.0, 1.0)
+			end if
+		end foreach
+		do this.count :+ 1
+		return ret
+	end func
+
+	class CChar()
+		var c: char
+		var x: float
+		var y: float
+		var r: float
+		var g: float
+		var b: float
+		var color: char
+		var colorFlag: bool
+		var typeFlag: bool
+
+		func Init(c: char, x: float, y: float, color: char): CChar
+			do this.c :: c
+			do this.x :: x
+			do this.y :: y
+			do this.color :: color
+			switch(color)
+			case('k') {keyword}
+				do this.r :: 0.5
+				do this.g :: 0.25
+				do this.b :: 0.25
+			case('b') {bool}
+				do this.r :: 1.0
+				do this.g :: 0.0
+				do this.b :: 1.0
+			case('c') {comment}
+				do this.r :: 0.0
+				do this.g :: 0.0
+				do this.b :: 1.0
+				do this.colorFlag :: true
+			case('@')
+				do this.r :: 0.0
+				do this.g :: 0.5
+				do this.b :: 0.5
+			default
+				do this.r :: 1.0
+				do this.g :: 1.0
+				do this.b :: 1.0
+			end switch
+			return this
+		end func
+	end class
+end class
