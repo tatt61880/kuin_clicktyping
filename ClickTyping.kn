@@ -1,6 +1,6 @@
 {
 	Clicktyping.kn (for Kuin 1.01):
-		Last Modified: 2014/02/10 00:32:00.
+		Last Modified: 2016/03/29 06:03:58.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -10,11 +10,25 @@ const FPS: int :: 60
 const InputSpan: int :: @FPS / 5
 const StrLenMax: int :: 40
 const Savefile: []char :: "clicktyping.knd"
+
+var seClick: Snd@CSnd
+var seStart: Snd@CSnd
+var seRestart: Snd@CSnd
+var seNext: Snd@CSnd
+var seCancel: Snd@CSnd
+func InitSoundEffects()
+	do @seClick :: Snd@Load("button48.ogg")
+	do @seStart :: Snd@Load("button34.ogg")
+	do @seRestart :: Snd@Load("button34.ogg")
+	do @seNext :: Snd@Load("button34.ogg")
+	do @seCancel :: Snd@Load("button39.ogg")
+end func
+
 const Hello: []char :: "Hello"
 const World: []char :: "World!!"
 
 func Init(cfg:Kuin@CCfg)
-	do cfg.Title :: "ClickTyping \"Hello World!!\""
+	do cfg.Title :: "ClickTyping \"" ~ @Hello ~ " " ~ @World ~ "!!\""
 end func
 
 var InsertMode:bool
@@ -101,6 +115,7 @@ end func
 
 func Main()
 	do DrawSub@Initialize()
+	do @InitSoundEffects()
 	while()
 		do @Title()
 		do @Game()
@@ -123,7 +138,7 @@ func Title()
 		do Kuin@Act()
 		do Draw@Rect(0.0, 0.0, 1600.0, 900.0, 0.45,0.55,1.0,1.0) {Background}
 		do DrawSub@DrawStr("ClickTyping", 50.0, 100.0, 40.0, 1.0, 1.0, 1.0, 1.0)
-		do DrawSub@DrawStr("\"Hello World!!\"", 540.0, 100.0, 60.0, 1.0, 0.0, 1.0, 1.0)
+		do DrawSub@DrawStr("\"" ~ @Hello ~ " " ~ @World ~ "\"", 540.0, 100.0, 60.0, 1.0, 0.0, 1.0, 1.0)
 		do Draw@Rect(clickButtonLeft, clickButtonTop, clickButtonRight - clickButtonLeft, clickButtonBottom - clickButtonTop, 1.0,1.0,0.0,0.5)
 		do DrawSub@DrawStr(clickButtonText, clickButtonLeft, clickButtonTop, clickButtonFontWidth, 0.0, 1.0, 1.0, 1.0)
 
@@ -140,6 +155,7 @@ func Title()
 			do mouseX :: Input@MouseX()
 			do mouseY :: Input@MouseY()
 			if(clickButtonLeft < mouseX & mouseX < clickButtonRight & clickButtonTop < mouseY & mouseY < clickButtonBottom)
+				do @seStart.Play(0.0, false, 0.0)
 				return
 			end if
 		end if
@@ -187,12 +203,14 @@ func Game()
 		do currentTimeStr :: Frame2TimeStr(currentFlame)
 		do DrawSub@DrawStr(currentTimeStr, 1600.0 - 30.0 * currentTimeStr.Len() $ float, 360.0, 30.0, 1.0, 1.0, 1.0, 1.0)
 		if(Input@Pad(0, Input@EBtn#C) = 1)
+			do @seCancel.Play(0.0, false, 0.0)
 			return
 		end if
 
 		if(helloFlag)
 			if(StrCmp(str, @Hello))
 				do helloFlag :: false
+				do @seNext.Play(0.0, false, 0.0)
 				do str :: #[@StrLenMax]char
 				do keyboard.SetVels()
 				do col :: 0
@@ -201,6 +219,7 @@ func Game()
 			if(StrCmp(str, @World))
 				do str :: #[@StrLenMax]char
 				do worldFlag :: false
+				do @seNext.Play(0.0, false, 0.0)
 			end if
 		else
 			if(clearFlag)
@@ -211,6 +230,7 @@ func Game()
 			end if
 			if(ending.Animation())
 				if(Input@Pad(0, Input@EBtn#A) = 1 | Input@Mouse(Input@EMouse#Left) = 1)
+					do @seRestart.Play(0.0, false, 0.0)
 					return
 				end if
 			end if
@@ -220,8 +240,6 @@ func Game()
 		do currentFlame :+ 1
 		do newRecord :: (bestScoreFlame = 0 | currentFlame < bestScoreFlame) ?(true, false)
 
-		do mouseX :: Input@MouseX()
-		do mouseY :: Input@MouseY()
 		if(helloFlag)
 			do DrawSub@DrawStr(@Hello, 0.0, 0.0, DrawSub@Dfw, 1.0, 1.0, 1.0, 0.1)
 		else

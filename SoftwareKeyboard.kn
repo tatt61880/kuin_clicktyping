@@ -1,6 +1,6 @@
 {
 	SoftwareKeyboard.kn (for Kuin 1.01):
-		Last Modified: 2014/02/10 00:32:25.
+		Last Modified: 2016/03/29 06:03:32.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -97,10 +97,12 @@ class SoftwareKeyboard()
 			var x: float :: Input@MouseX()
 			var y: float :: Input@MouseY()
 			foreach key(me.keys)
+				{FIXME 内側判定に傾きが考慮されていないので要修正}
 				if(x > key.x & x < (key.x + @KeyWidth) & y > key.y & y < (key.y + @KeyHeight))
 					do HighlightPreInputChar(key.x, key.y, key.t)
 					if(Input@Mouse(Input@EMouse#Left) = 1)
 						do c :: key.c
+						do ClickTyping@seClick.Play(0.0, false, 0.0)
 					end if
 					break key
 				end if

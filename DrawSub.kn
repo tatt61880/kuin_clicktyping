@@ -1,6 +1,6 @@
 {
 	Draw.kn (for Kuin 1.01):
-		Last Modified: 2014/02/10 00:32:08.
+		Last Modified: 2016/03/29 05:32:41.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -52,14 +52,14 @@ class EndingAnimation()
 	func Init() :@EndingAnimation
 		do me.count :: 0
 		do me.message :: "Thank you for playing!"
-		do me.kuin :: "Programming lauguage: Kuin (Kuina: @b2)"
+		do me.kuin :: "Programming lauguage: Kuin (Kuina: @kuina_ch)"
 		do me.fontcreator :: "Font: AiNIFont (AiNI: @aini_bellwood)"
 		do me.other :: "The others: tatt61880 (Tatt: @tatt61880)"
 		do me.code :: "" {
 		} ~ "func Main()\n" {
 		} ~ "    while()\n" {
 		} ~ "        do Kuin@Act()\n" {
-		} ~ "        {TODO}\n" {
+		} ~ "        {☆TODO☆}\n" {
 		} ~ "    end while\n" {
 		} ~ "end func " {
 		}
@@ -67,10 +67,11 @@ class EndingAnimation()
 		} ~ "kkkk 0000()\n" {
 		} ~ "    kkkkk()\n" {
 		} ~ "        kk 0000@000()\n" {
-		} ~ "        cccccc\n" {
+		} ~ "        cccccccc\n" {
 		} ~ "    kkk kkkkk\n" {
 		} ~ "kkk kkkk " {
 		}
+		assert me.code.Len() = color.Len()
 
 		do me.codeChars :: #[me.code.Len()]CChar
 		var col: int :: -1
