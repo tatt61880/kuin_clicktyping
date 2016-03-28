@@ -1,6 +1,6 @@
 {
 	Clicktyping.kn (for Kuin 1.01):
-		Last Modified: 2016/03/29 06:03:58.
+		Last Modified: 2016/03/29 06:41:30.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -11,17 +11,47 @@ const InputSpan: int :: @FPS / 5
 const StrLenMax: int :: 40
 const Savefile: []char :: "clicktyping.knd"
 
-var seClick: Snd@CSnd
-var seStart: Snd@CSnd
-var seRestart: Snd@CSnd
-var seNext: Snd@CSnd
-var seCancel: Snd@CSnd
+var seClick: @CSound
+var seStart: @CSound
+var seRestart: @CSound
+var seNext: @CSound
+var seCancel: @CSound
+
+var se: []Snd@CSnd
+const SoundEffectAvailable: bool :: false {oggファイルを用意できる場合は、trueにすることでSEを利用できます}
+
+class CSound()
+	{
+	{メンバ変数にSnd@CSndがあるとコンパイルエラーになる不具合があるため、me.sndの代わりに、@seとme.idを使用します。}
+	var snd: Snd@CSnd
+	}
+	var id: int
+	func Init(sndFile_: []char): @CSound
+		{
+		do me.snd :: Snd@Load(sndFile_)
+		}
+		if(@SoundEffectAvailable)
+			do me.id :: @se.Len()
+			do @se :~ [Snd@Load(sndFile_)]
+		end if
+		return me
+	end func
+	func Play()
+		{
+		do me.snd.Play(0.0, false, 0.0)
+		}
+		if(@SoundEffectAvailable)
+			do @se[me.id].Play(0.0, false, 0.0)
+		end if
+	end func
+end class
 func InitSoundEffects()
-	do @seClick :: Snd@Load("button48.ogg")
-	do @seStart :: Snd@Load("button34.ogg")
-	do @seRestart :: Snd@Load("button34.ogg")
-	do @seNext :: Snd@Load("button34.ogg")
-	do @seCancel :: Snd@Load("button39.ogg")
+	do @se :: #[0]Snd@CSnd
+	do @seClick		:: (#@CSound).Init("button48.ogg")
+	do @seStart		:: (#@CSound).Init("button34.ogg")
+	do @seRestart	:: (#@CSound).Init("button34.ogg")
+	do @seNext		:: (#@CSound).Init("button34.ogg")
+	do @seCancel	:: (#@CSound).Init("button39.ogg")
 end func
 
 const Hello: []char :: "Hello"
@@ -155,7 +185,7 @@ func Title()
 			do mouseX :: Input@MouseX()
 			do mouseY :: Input@MouseY()
 			if(clickButtonLeft < mouseX & mouseX < clickButtonRight & clickButtonTop < mouseY & mouseY < clickButtonBottom)
-				do @seStart.Play(0.0, false, 0.0)
+				do @seStart.Play()
 				return
 			end if
 		end if
@@ -203,14 +233,14 @@ func Game()
 		do currentTimeStr :: Frame2TimeStr(currentFlame)
 		do DrawSub@DrawStr(currentTimeStr, 1600.0 - 30.0 * currentTimeStr.Len() $ float, 360.0, 30.0, 1.0, 1.0, 1.0, 1.0)
 		if(Input@Pad(0, Input@EBtn#C) = 1)
-			do @seCancel.Play(0.0, false, 0.0)
+			do @seCancel.Play()
 			return
 		end if
 
 		if(helloFlag)
 			if(StrCmp(str, @Hello))
 				do helloFlag :: false
-				do @seNext.Play(0.0, false, 0.0)
+				do @seNext.Play()
 				do str :: #[@StrLenMax]char
 				do keyboard.SetVels()
 				do col :: 0
@@ -219,7 +249,7 @@ func Game()
 			if(StrCmp(str, @World))
 				do str :: #[@StrLenMax]char
 				do worldFlag :: false
-				do @seNext.Play(0.0, false, 0.0)
+				do @seNext.Play()
 			end if
 		else
 			if(clearFlag)
@@ -230,7 +260,7 @@ func Game()
 			end if
 			if(ending.Animation())
 				if(Input@Pad(0, Input@EBtn#A) = 1 | Input@Mouse(Input@EMouse#Left) = 1)
-					do @seRestart.Play(0.0, false, 0.0)
+					do @seRestart.Play()
 					return
 				end if
 			end if
