@@ -1,6 +1,6 @@
 {
 	Clicktyping.kn (for Kuin 1.01):
-		Last Modified: 2016/03/29 06:41:30.
+		Last Modified: 2016/04/13 23:33:33.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -31,8 +31,11 @@ class CSound()
 		do me.snd :: Snd@Load(sndFile_)
 		}
 		if(@SoundEffectAvailable)
-			do me.id :: @se.Len()
-			do @se :~ [Snd@Load(sndFile_)]
+			try
+				do me.id :: @se.Len()
+				do @se :~ [Snd@Load(sndFile_)]
+			catch()
+			end try
 		end if
 		return me
 	end func
@@ -41,17 +44,23 @@ class CSound()
 		do me.snd.Play(0.0, false, 0.0)
 		}
 		if(@SoundEffectAvailable)
-			do @se[me.id].Play(0.0, false, 0.0)
+			try
+				do @se[me.id].Play(0.0, false, 0.0)
+			catch()
+			end try
 		end if
 	end func
 end class
 func InitSoundEffects()
 	do @se :: #[0]Snd@CSnd
-	do @seClick		:: (#@CSound).Init("button48.ogg")
-	do @seStart		:: (#@CSound).Init("button34.ogg")
-	do @seRestart	:: (#@CSound).Init("button34.ogg")
-	do @seNext		:: (#@CSound).Init("button34.ogg")
-	do @seCancel	:: (#@CSound).Init("button39.ogg")
+	try
+		do @seClick		:: (#@CSound).Init("button48.ogg")
+		do @seStart		:: (#@CSound).Init("button34.ogg")
+		do @seRestart	:: (#@CSound).Init("button34.ogg")
+		do @seNext		:: (#@CSound).Init("button34.ogg")
+		do @seCancel	:: (#@CSound).Init("button39.ogg")
+	catch()
+	end try
 end func
 
 const Hello: []char :: "Hello"
