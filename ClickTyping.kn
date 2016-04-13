@@ -1,6 +1,6 @@
 {
 	Clicktyping.kn (for Kuin 1.01):
-		Last Modified: 2016/04/13 23:33:33.
+		Last Modified: 2016/04/13 23:37:09.
 		Created by @tatt61880
 			https://twitter.com/tatt61880
 			https://github.com/tatt61880
@@ -53,14 +53,11 @@ class CSound()
 end class
 func InitSoundEffects()
 	do @se :: #[0]Snd@CSnd
-	try
-		do @seClick		:: (#@CSound).Init("button48.ogg")
-		do @seStart		:: (#@CSound).Init("button34.ogg")
-		do @seRestart	:: (#@CSound).Init("button34.ogg")
-		do @seNext		:: (#@CSound).Init("button34.ogg")
-		do @seCancel	:: (#@CSound).Init("button39.ogg")
-	catch()
-	end try
+	do @seClick		:: (#@CSound).Init("button48.ogg")
+	do @seStart		:: (#@CSound).Init("button34.ogg")
+	do @seRestart	:: (#@CSound).Init("button34.ogg")
+	do @seNext		:: (#@CSound).Init("button34.ogg")
+	do @seCancel	:: (#@CSound).Init("button39.ogg")
 end func
 
 const Hello: []char :: "Hello"
