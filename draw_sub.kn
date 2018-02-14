@@ -1,6 +1,6 @@
 {
 draw_dub.kn
-Last Modified: 2018/02/14 23:05:49.
+Last Modified: 2018/02/14 23:15:57.
 Created by @tatt61880
 https://twitter.com/tatt61880
 https://github.com/tatt61880
@@ -36,8 +36,8 @@ var rect: draw@Tex
 end func
 
 +func Initialize()
-	do @rect :: draw@makeTex("res/rect.png")
-	do @font :: draw@makeTex("res/aini_font_160_80.png")
+	do @rect :: draw@makeTexEvenColor(16#FFFFFFFF)
+	do @font :: draw@makeTex("res/aini_font_80_160.png")
 end func
 
 +class EndingAnimation()

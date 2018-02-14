@@ -1,6 +1,6 @@
 {
 click_typing.kn
-Last Modified: 2018/02/14 23:03:35.
+Last Modified: 2018/02/14 23:16:44.
 Created by @tatt61880
 https://twitter.com/tatt61880
 https://github.com/tatt61880
@@ -61,12 +61,12 @@ func initSoundEffects()
 	do @seCancel	:: (#@Sound).init("button39.ogg")
 end func
 
-{
 const Hello: []char :: "Hello"
 const World: []char :: "World!!"
-}
+{
 const Hello: []char :: "H"
 const World: []char :: "H"
+}
 const titleStr: []char :: "ClickTyping"
 
 var insertMode: bool
