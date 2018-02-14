@@ -1,0 +1,122 @@
+{
+software_keyboard.kn
+Last Modified: 2018/02/14 22:57:33.
+Created by @tatt61880
+https://twitter.com/tatt61880
+https://github.com/tatt61880
+}
+
+const keyWidth: float :: \draw_sub@fw * 0.35
+const KeyHeight: float :: \draw_sub@fh * @keyWidth / \draw_sub@fw
+const BoardWidth: float :: @keyWidth * \draw_sub@charXMax $ float
+const BoardHeight: float :: @KeyHeight * \draw_sub@charYMax $ float
+
++class SoftwareKeyboard()
+	+var keys: []Key
+
+	class Key()
+		+var c:char
+		+var x: float
+		+var y: float
+		+var t: float
+		+var velx: float
+		+var vely: float
+		+var velt: float
+
+		+func init(c: char, x: float, y: float) :Key
+			do me.c :: c
+			do me.x :: x
+			do me.y :: y
+			ret me
+		end func
+
+		+func setVel(velx: float, vely: float, velt: float)
+			do me.velx :: velx
+			do me.vely :: vely
+			do me.velt :: velt
+		end func
+
+		+func show()
+			do \draw_sub@drawCharRot(me.c, me.x, me.y, me.t, @keyWidth, 16#FF80FFFF)
+		end func
+	end class
+
+	+func init(): @SoftwareKeyboard
+		do me.keys :: #[\draw_sub@charNum]Key
+		for i(0, \draw_sub@charNum - 1)
+			do me.keys[i] :: (#Key).init((i + 32) $ char, 50.0 + (i % \draw_sub@charXMax) $ float * @keyWidth, 100.0 + (i / \draw_sub@charXMax) $ float * @KeyHeight)
+		end for
+		ret me
+	end func
+
+	+func setVels()
+		const maxSpeed: int :: 1
+		assert maxSpeed > 0
+		for i(0, ^me.keys - 1)
+			while a(true)
+				do me.keys[i].setVel(lib@rnd(-maxSpeed, maxSpeed) $ float, lib@rnd(-maxSpeed, maxSpeed) $ float, lib@rnd(-maxSpeed, maxSpeed) $ float / 360.0)
+				if(me.keys[i].velx <> 0.0 & me.keys[i].vely <> 0.0 & me.keys[i].velt <> 0.0)
+					break a
+				end if
+			end while
+		end for
+	end func
+
+	+func keyboardAct(c: &char)
+		do me.showKeyboard()
+		do me.keyMove()
+		do me.keyInput(&c)
+	end func
+
+	func showKeyboard()
+		for i(0, ^me.keys - 1)
+			do me.keys[i].show()
+		end for
+	end func
+
+	func keyMove()
+		for i(0, ^me.keys - 1)
+			var key: Key :: me.keys[i]
+			do key.x :+ key.velx
+			do key.y :+ key.vely
+			do key.t :+ key.velt
+			if(key.x < 0.0 | key.x > (\click_typing@wndWidth $ float - @keyWidth))
+				do key.x :- key.velx
+				do key.velx :: -key.velx
+			end if
+			if(key.y < 80.0 | key.y > (\click_typing@wndHeight $ float - @KeyHeight))
+				do key.y :- key.vely
+				do key.vely :: - key.vely
+			end if
+		end for
+	end func
+
+	func keyInput(c: &char)
+		if(c <> 0 $ char)
+			var id: int :: c $ int - 32
+			do highlightPreInputChar(me.keys[id].x, me.keys[id].y, me.keys[id].t)
+		else
+			var x: float :: \click_typing@mouseX $ float
+			var y: float :: \click_typing@mouseY $ float
+			for i(0, ^me.keys - 1)
+				var key: Key :: me.keys[i]
+				var xm: float :: key.x + @keyWidth / 2.0
+				var ym: float :: key.y + @KeyHeight / 2.0
+				var xt: float :: xm + (x - xm) * lib@cos(-key.t) - (y - ym) * lib@sin(-key.t)
+				var yt: float :: ym + (x - xm) * lib@sin(-key.t) + (y - ym) * lib@cos(-key.t)
+				if(key.x < xt & xt < (key.x + @keyWidth) & key.y < yt & yt < (key.y + @KeyHeight))
+					do highlightPreInputChar(key.x, key.y, key.t)
+					if(\click_typing@mouseL = 1)
+						do c :: key.c
+						do \click_typing@seClick.play()
+					end if
+					break i
+				end if
+			end for
+		end if
+
+		func highlightPreInputChar(x: float, y: float, t: float)
+			do \draw_sub@drawRectRot(x, y, @keyWidth, @KeyHeight, @keyWidth / 2.0, @KeyHeight / 2.0, t, 16#80FFFF00)
+		end func
+	end func
+end class

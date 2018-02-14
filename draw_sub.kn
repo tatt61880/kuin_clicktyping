@@ -1,0 +1,172 @@
+{
+draw_dub.kn
+Last Modified: 2018/02/14 23:05:49.
+Created by @tatt61880
+https://twitter.com/tatt61880
+https://github.com/tatt61880
+}
+
++const charNum: int :: 96
++const charXMax: int :: 16
++const charYMax: int :: 6
++const fw: float :: 80.0
++const fh: float :: 160.0
++const dfw: float :: 30.0
++const dfh: float :: 60.0
+
+var font: draw@Tex
++func drawChar(c: char, x: float, y: float, w: float, color: int)
+	do @font.drawScale(x, y, w, 2.0 * w, @fw * (c $ int % @charXMax) $ float, @fh * (c $ int / @charXMax - 2) $ float, @fw, @fh, color)
+end func
+
++func drawCharRot(c: char, x: float, y: float, t: float, w: float, color: int)
+	do @font.drawRot(x, y, w, 2.0 * w, @fw * (c $ int % @charXMax) $ float, @fh * (c $ int / @charXMax - 2) $ float, @fw, @fh, w / 2.0, w, t, color)
+end func
+
++func drawStr(str: []char, x: float, y: float, w: float, color: int)
+	for i(0, ^str - 1)
+		do @drawChar(str[i], x + w * i $ float, y, w, color)
+	end for
+end func
+
+var rect: draw@Tex
+
++func drawRectRot(dx: float, dy: float, w: float, h: float, cx: float, cy: float, angle: float, color: int)
+	do @rect.drawRot(dx, dy, w, h, 0.0, 0.0, 1.0, 1.0, cx, cy, angle, color)
+end func
+
++func Initialize()
+	do @rect :: draw@makeTex("res/rect.png")
+	do @font :: draw@makeTex("res/aini_font_160_80.png")
+end func
+
++class EndingAnimation()
+	var message: []char
+	var code: []char
+	var kuin: []char
+	var fontcreator: []char
+	var other: []char
+	var codeColor: []char
+	var codeChars: []Char
+	var count: int
+
+	+func init() :@EndingAnimation
+		do me.count :: 0
+		do me.message :: "Thank you for playing!"
+		do me.kuin :: "Programming lauguage: Kuin (Kuina: @kuina_ch)"
+		do me.fontcreator :: "Font: AiNIFont (AiNI: @aini_bellwood)"
+		do me.other :: "The others: tatt61880 (Tatt: @tatt61880)"
+		do me.code :: "" {
+		} ~ "func main()\n" {
+		} ~ "    while(wnd@act())\n" {
+		} ~ "        {TODO}\n" {
+		} ~ "    end while\n" {
+		} ~ "end func " {
+		}
+		const color: []char :: "" {
+		} ~ "kkkk 0000()\n" {
+		} ~ "    kkkkk(000@000())\n" {
+		} ~ "        cccccc\n" {
+		} ~ "    kkk kkkkk\n" {
+		} ~ "kkk kkkk " {
+		}
+		assert ^me.code = ^color
+
+		do me.codeChars :: #[^me.code]Char
+		var col: int :: -1
+		var row: int :: 0
+		for i(0, ^me.codeChars - 1)
+			do col :+ 1
+			var c: char :: me.code[i]
+			if(c = '\n')
+				do c :: ' '
+				do col :: -1
+				do row :+ 1
+			end if
+			do me.codeChars[i] :: (#Char).init(c, col $ float * @dfw, 100.0 + row $ float * @dfh, color[i])
+		end for
+		ret me
+	end func
+
+	+func animation() : bool
+		const typespeedFpc: int :: 4 {frame / char}
+		var retVal: bool :: false
+		var n: int :: me.count / typespeedFpc
+
+		if(n > ^me.code - 2)
+			do retVal :: true
+			do @drawStr(me.message, 0.0, 0.0, @dfw, 16#FFFFFF00)
+			const bottom: float :: 900.0
+			const creditFontWidth: float :: 30.0
+			do @drawStr(me.kuin, 0.0, bottom - 6.0 * creditFontWidth, creditFontWidth, 16#FFFFFFFF)
+			do @drawStr(me.fontcreator, 0.0, bottom - 4.0 * creditFontWidth, creditFontWidth, 16#FFFFFFFF)
+			do @drawStr(me.other, 0.0, bottom - 2.0 * creditFontWidth, creditFontWidth, 16#FFFFFFFF)
+			do n :: ^me.code - 2
+		end if
+		if(me.codeChars[n].color <> me.codeChars[n + 1].color)
+			for i(0, ^me.codeChars - 1)
+				if(me.codeChars[i].typeFlag = false)
+					break i
+				end if
+				do me.codeChars[i].colorFlag :: true
+			end for
+		end if
+		do me.codeChars[n].typeFlag :: true
+
+		for i(0, ^me.codeChars - 1)
+			if(me.codeChars[i].typeFlag = false)
+				break i
+			end if
+			if(me.codeChars[i].colorFlag)
+				do @drawChar(me.codeChars[i].c, me.codeChars[i].x, me.codeChars[i].y, @dfw, 16#FF000000 + (me.codeChars[i].r * 255.0) $ int * 16#00010000 + (me.codeChars[i].g * 255.0) $ int * 16#00000100 + (me.codeChars[i].b * 255.0) $ int)
+			else
+				do @drawChar(me.codeChars[i].c, me.codeChars[i].x, me.codeChars[i].y, @dfw, 16#FFFFFFFF)
+			end if
+		end for
+		do me.count :+ 1
+		ret retVal
+	end func
+
+	class Char()
+		+var c: char
+		+var x: float
+		+var y: float
+		+var r: float
+		+var g: float
+		+var b: float
+		+var color: char
+		+var colorFlag: bool
+		+var typeFlag: bool
+
+		+func init(c: char, x: float, y: float, color: char): Char
+			do me.c :: c
+			do me.x :: x
+			do me.y :: y
+			do me.color :: color
+			switch(color)
+			case('k') {keyword}
+				do me.r :: 0.5
+				do me.g :: 0.25
+				do me.b :: 0.25
+			case('b') {bool}
+				do me.r :: 1.0
+				do me.g :: 0.0
+				do me.b :: 1.0
+			case('c') {comment}
+				do me.r :: 0.0
+				do me.g :: 0.0
+				do me.b :: 1.0
+				do me.colorFlag :: true
+			case('@')
+				do me.r :: 0.0
+				do me.g :: 0.5
+				do me.b :: 0.5
+			default
+				do me.r :: 1.0
+				do me.g :: 1.0
+				do me.b :: 1.0
+			end switch
+			ret me
+		end func
+	end class
+end class

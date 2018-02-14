@@ -1,0 +1,421 @@
+{
+click_typing.kn
+Last Modified: 2018/02/14 23:03:35.
+Created by @tatt61880
+https://twitter.com/tatt61880
+https://github.com/tatt61880
+}
+
+const fps: int :: 60
+const inputSpan: int :: @fps / 5
+const strLenMax: int :: 40
+const saveFile: []char :: "clicktyping.knd"
+
+var wndMain: wnd@Wnd
+var drawMain: wnd@Draw
++const wndWidth: int :: 800
++const wndHeight: int :: 450
++var mouseL: int
++var mouseX: int
++var mouseY: int
+
++var seClick: @Sound
+var seStart: @Sound
+var seRestart: @Sound
+var seNext: @Sound
+var seCancel: @Sound
+
+var se: []snd@Snd
+const soundEffectAvailable: bool :: false {oggファイルを用意できる場合は、trueにすることでSEを利用できます}
+
+class Sound()
+	var id: int
+	+func init(sndFile_: []char): @Sound
+		;do me.snd :: snd@Load(sndFile_)
+		if(@soundEffectAvailable)
+			try
+				do me.id :: ^@se
+				do @se :~ [snd@makeSnd(sndFile_, false)]
+			catch
+			end try
+		end if
+		ret me
+	end func
+	+func play()
+		;do me.snd.play(0.0, false, 0.0)
+		if(@soundEffectAvailable)
+			try
+				do @se[me.id].play()
+			catch
+			end try
+		end if
+	end func
+end class
+
+func initSoundEffects()
+	do @se :: #[0]snd@Snd
+	do @seClick		:: (#@Sound).init("button48.ogg")
+	do @seStart		:: (#@Sound).init("button34.ogg")
+	do @seRestart	:: (#@Sound).init("button34.ogg")
+	do @seNext		:: (#@Sound).init("button34.ogg")
+	do @seCancel	:: (#@Sound).init("button39.ogg")
+end func
+
+{
+const Hello: []char :: "Hello"
+const World: []char :: "World!!"
+}
+const Hello: []char :: "H"
+const World: []char :: "H"
+const titleStr: []char :: "ClickTyping"
+
+var insertMode: bool
+var inputFlag: bool
+var colEnd: int
+
+func unShiftStr(col: &int, str: []char)
+	if(!@insertMode)
+		if(col > @colEnd)
+			do col :$ @colEnd
+		end if
+		for(1, @colEnd - col)
+			do @Del(col, str)
+		end for
+		do @insertMode :: true
+	end if
+
+	for i(^str - 1, col + 1, -1)
+		do str[i] :: str[i - 1]
+	end for
+	if(col < @strLenMax)
+		do str[col] :: ' '
+	end if
+end func
+
+func Del(col: int, str: []char)
+	if(col < @strLenMax)
+		for i(col, ^str - 2)
+			do str[i] :: str[i + 1]
+		end for
+		do str[^str - 1] :: 0 $ char
+	end if
+end func
+
+func BackSpace(col: &int, str: []char)
+	if(col > 0)
+		do col :- 1
+		do @Del(col, str)
+	end if
+end func
+
+func DeleteSelectedChars(col: &int, str: []char)
+	if(col > @colEnd)
+		do col :$ @colEnd
+	end if
+	for(1, @colEnd - col)
+		do @Del(col, str)
+	end for
+end func
+
+func FillSpace(col: int, str: []char)
+	while a(true)
+		if(col = 0)
+			break a
+		elif(str[col - 1] = 0 $ char)
+			do str[col - 1] :: ' '
+		else
+			break a
+		end if
+		do col :- 1
+	end while
+end func
+
+func TextLen(str: []char) : int
+	for i(0, ^str - 1)
+		if(str[i] = 0 $ char)
+			ret i
+		end if
+	end for
+	ret @strLenMax
+end func
+
+func InsertChar(col: &int, str: []char, c: &char)
+	if(c = 16#7F $ char)
+		do @Del(col, str) {Delete}
+	elif(col < @strLenMax)
+		do str[col] :: c
+		do @FillSpace(col, str)
+		do col :+ 1
+	end if
+	do c :: 0 $ char
+	do dbg@print(str)
+end func
+
+func main()
+	do \draw_sub@Initialize()
+	do @initSoundEffects()
+
+	do @wndMain :: wnd@makeWnd(null, %fix, @wndWidth, @wndHeight, @titleStr)
+	do @drawMain :: wnd@makeDraw(@wndMain, 0, 0, @wndWidth, @wndHeight, %scale, %scale, false)
+	do @drawMain.onMouseDownL :: @drawMainOnMouseDownL
+	do @drawMain.onMouseUpL :: @drawMainOnMouseUpL
+	do @drawMain.onMouseMove :: @drawMainOnMouseMove
+	while(wnd@act())
+		do @title()
+		do @game()
+	end while
+end func
+
+func drawMainOnMouseDownL(wnd: wnd@Draw, xMouse: int, yMouse: int)
+	do @mouseL :+ 1
+end func
+func drawMainOnMouseUpL(wnd: wnd@Draw, xMouse: int, yMouse: int)
+	do @mouseL :: 0
+end func
+func drawMainOnMouseMove(wnd: wnd@Draw, x: int, y: int)
+	var width: int
+	var height: int
+	do wnd.getPos(&, &, &width, &height)
+	do @mouseX :: x * @wndWidth / width
+	do @mouseY :: y * @wndHeight / height
+end func
+
+func title()
+	const clickButtonText: []char :: "Click to Start"
+	const clickButtonFontWidth: float :: 50.0
+	const clickButtonLeft: float :: 50.0
+	const clickButtonTop: float :: 200.0
+	const clickButtonBottom: float :: clickButtonTop + clickButtonFontWidth * 2.0
+	var clickButtonRight: float :: clickButtonLeft + (^clickButtonText) $ float * clickButtonFontWidth
+
+	var retFlag:bool :: false
+
+	while(wnd@act())
+		do draw@rect(0.0, 0.0, @wndWidth $ float, @wndHeight $ float, 16#FF001880) {Background}
+		do \draw_sub@drawStr("ClickTyping", 50.0, 50.0, 20.0, 16#FFFFFFFF)
+		do \draw_sub@drawStr("\"" ~ @Hello ~ " " ~ @World ~ "\"", 100.0, 100.0, 40.0, 16#FFFFFFFF)
+		do draw@rect(clickButtonLeft, clickButtonTop, clickButtonRight - clickButtonLeft, clickButtonBottom - clickButtonTop, 16#80FFFF00)
+		do \draw_sub@drawStr(clickButtonText, clickButtonLeft, clickButtonTop, clickButtonFontWidth, 16#FF00FFFF)
+
+		switch(input@pad(0, %a))
+		case(1)
+			do retFlag :: true
+		case(0)
+			if(retFlag)
+				ret
+			end if
+		end switch
+
+		if(@mouseL = 1)
+			if(clickButtonLeft < @mouseX $ float & @mouseX $ float  < clickButtonRight & clickButtonTop < @mouseY $ float  & @mouseY $ float  < clickButtonBottom)
+				do @seStart.play()
+				ret
+			end if
+		end if
+		do draw@render(60)
+	end while
+end func
+
+func game()
+	var str: []char :: #[@strLenMax]char
+	var c:char
+	var keyboard: \software_keyboard@SoftwareKeyboard :: (#\software_keyboard@SoftwareKeyboard).init()
+	var ending: \draw_sub@EndingAnimation :: (#\draw_sub@EndingAnimation).init()
+	var col: int :: 0
+	var helloFlag:bool :: true
+	var worldFlag:bool :: true
+	var clearFlag:bool :: true
+	do @inputFlag :: true
+	do @insertMode :: true
+	var currentFlame: int :: 0
+	var currentTimeStr: []char
+
+	var bestScoreFlame: int :: 0
+	;var savedataBins: []bit8 :: savedata@Load(@saveFile)
+	;do bestScoreFlame :: (savedataBins =& null) ?(0, savedataBins $ int)
+	var bestScoreTimeStr: []char :: frameToTimeStr(bestScoreFlame)
+	var newRecord:bool
+
+	func frameToTimeStr(frame: int): []char
+		if(frame = 0)
+			ret "---------"
+		else
+			ret "\{frame / @fps}." ~ ((frame % @fps) * 100 / @fps).toStrFmt("02d") ~ " sec."
+		end if
+	end func
+
+	while loop(wnd@act())
+		var strWidth: float :: 15.0
+		do draw@rect(0.0, 0.0, @wndWidth $ float, @wndHeight $ float, 16#FF001880) {Background}
+		do draw@rect(0.0, 0.0, @wndWidth $ float, \draw_sub@dfh, 16#FF777777) {EditLine}
+		do draw@rect(@TextLen(str) $ float * \draw_sub@dfw, 0.0, @wndWidth $ float, \draw_sub@dfh, 16#FF444444) {EditLine}
+		do \draw_sub@drawStr("HI SCORE:", @wndWidth $ float * 0.75, 100.0, strWidth, 16#FFFF00FF)
+		do \draw_sub@drawStr(bestScoreTimeStr, @wndWidth $ float - strWidth * (^bestScoreTimeStr) $ float, 160.0, strWidth, 16#FFFF00FF)
+		do \draw_sub@drawStr("Time:", @wndWidth $ float * 0.75, 300.0, strWidth, 16#FFFFFFFF)
+		do currentTimeStr :: frameToTimeStr(currentFlame)
+		do \draw_sub@drawStr(currentTimeStr, @wndWidth $ float - strWidth * (^currentTimeStr) $ float, 360.0, strWidth, 16#FFFFFFFF)
+
+		if(input@pad(0, %c) = 1)
+			do @seCancel.play()
+			ret
+		end if
+
+		if(helloFlag)
+			if(StrCmp(str, @Hello))
+				do helloFlag :: false
+				do @seNext.play()
+				do str :: #[@strLenMax]char
+				do keyboard.setVels()
+				do col :: 0
+			end if
+		elif(worldFlag)
+			if(StrCmp(str, @World))
+				do str :: #[@strLenMax]char
+				do worldFlag :: false
+				do @seNext.play()
+			end if
+		else
+			if(clearFlag)
+				do bestScoreFlame :: newRecord ?(currentFlame, bestScoreFlame)
+				do bestScoreTimeStr :: frameToTimeStr(bestScoreFlame)
+				;do savedata@Save(@saveFile, bestScoreFlame.ToBins())
+				do clearFlag :: false
+			end if
+			if(ending.animation())
+				if(input@pad(0, %a) = 1 | @mouseL = 1)
+					do @seRestart.play()
+					ret
+				end if
+			end if
+			do draw@render(60)
+			skip loop
+		end if
+
+		do currentFlame :+ 1
+		do newRecord :: (bestScoreFlame = 0 | currentFlame < bestScoreFlame) ?(true, false)
+
+		if(helloFlag)
+			do \draw_sub@drawStr(@Hello, 0.0, 0.0, \draw_sub@dfw, 16#22FFFFFF)
+		else
+			do \draw_sub@drawStr(@World, 0.0, 0.0, \draw_sub@dfw, 16#22FFFFFF)
+		end if
+		do keyboard.keyboardAct(&c)
+		do edit(&col, str, &c)
+		do drawText(str)
+		do drawCursor(col)
+		do draw@render(60)
+
+		func StrCmp(str1: []char, str2: []char) :bool
+			for i(0, ^str2 - 1)
+				if(str1[i] <> str2[i])
+					ret false
+				end if
+			end for
+			ret true
+		end func
+	end while
+
+	func edit(col: &int, str: []char, c: &char)
+		{Space key}
+		var n: int :: input@pad(0, %a)
+		if(n > 0)
+			const framePerChar: int :: 3
+			do c :: (32 + ((n - 1) / framePerChar) % \draw_sub@charNum) $ char
+			if(n = 1)
+				do @inputFlag :: true
+				do @unShiftStr(&col, str)
+			else
+				do \draw_sub@drawChar(c, \draw_sub@dfw * col $ float, \draw_sub@dfh * 0.0, \draw_sub@dfw, 16#FFFFFFFF)
+				if(col < @strLenMax)
+					do str[col] :: ' '
+				end if
+			end if
+		elif(c <> 0 $ char)
+			do @unShiftStr(&col, str)
+			if(@inputFlag)
+				do @inputFlag :: false
+				do @Del(col, str) {Cancel inserting ' '}
+			end if
+			do @InsertChar(&col, str, &c)
+			do @insertMode :: true
+		end if
+
+		{Arrow keys}
+		if(input@pad(0, %left) % @inputSpan = 1) {Left}
+			if(col <> 0)
+				if(n > 0)
+					do str[col] :$ str[col - 1]
+				end if
+				do col :- 1
+			end if
+			do @insertMode :: true
+		elif(input@pad(0, %right) % @inputSpan = 1) {Right}
+			if(col <> @strLenMax - 1)
+				if(n > 0)
+					do str[col] :$ str[col + 1]
+				end if
+				do col :+ 1
+			end if
+			do @insertMode :: true
+		elif(input@pad(0, %b) % @inputSpan = 1) {BackSpace}
+			if(@insertMode)
+				do @BackSpace(&col, str)
+			else
+				do @DeleteSelectedChars(&col, str)
+			end if
+			do dbg@print(str)
+			do @insertMode :: true
+		end if
+
+		{ Click (Editor area) }
+		if(@mouseY > 0 & @mouseY < \draw_sub@dfh $ int)
+			var m: int :: @mouseL
+			if(m = 1)
+				do @insertMode :: true
+				do col :: (@mouseX $ float / \draw_sub@dfw + 0.4) $ int
+				if(col > @strLenMax - 1)
+					do col :: @strLenMax
+				end if
+			elif(m <> 0)
+				do @colEnd :: (@mouseX $ float / \draw_sub@dfw + 0.4) $ int
+				var textLen: int :: @TextLen(str)
+				if(col < textLen)
+					if(@colEnd < textLen)
+					else
+						do @colEnd :: textLen
+					end if
+					if(col <> @colEnd)
+						do @insertMode :: false
+					end if
+				else
+					if(@colEnd < textLen)
+						do col :: textLen
+						do @insertMode :: false
+					else
+						do col :: @colEnd
+					end if
+				end if
+			end if
+		end if
+	end func
+
+	func drawText(str: []char)
+		for i(0, ^str - 1)
+			var n: int :: str[i] $ int - 32
+			if(str[i] = 0 $ char)
+				break i
+			end if
+			do \draw_sub@drawChar(str[i], \draw_sub@dfw * i $ float, \draw_sub@dfh * 0.0, \draw_sub@dfw, 16#FFFFFFFF)
+		end for
+	end func
+
+	func drawCursor(col: int)
+		if(@insertMode)
+			if(draw@cnt() % 50 > 25)
+				do draw@rect(\draw_sub@dfw * col $ float, 0.0, 5.0, \draw_sub@dfh, 16#FF00FF00)
+			end if
+		else
+			do draw@rect(\draw_sub@dfw * col $ float, 0.0, \draw_sub@dfw * (@colEnd - col) $ float, \draw_sub@dfh, 16#8000FF00)
+		end if
+	end func
+end func
